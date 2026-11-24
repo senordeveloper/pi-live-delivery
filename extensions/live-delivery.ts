@@ -25,6 +25,7 @@ interface RunningWorkbench {
 }
 
 let running: Promise<RunningWorkbench> | undefined;
+let deadlineTimer: NodeJS.Timeout | undefined;
 
 function makeCfg(ctx: ExtensionContext): CdConfig {
   return {
@@ -72,10 +73,22 @@ function startWorkbench(ctx: ExtensionContext): Promise<RunningWorkbench> {
 
 function ensureWorkbench(ctx: ExtensionContext): Promise<RunningWorkbench> {
   if (!running) {
-    running = startWorkbench(ctx).catch((e) => {
-      running = undefined;
-      throw e;
-    });
+    running = startWorkbench(ctx)
+      .catch((e) => {
+        running = undefined;
+        throw e;
+      })
+      .then((wb) => {
+        if (!deadlineTimer) {
+          deadlineTimer = setInterval(() => {
+            try {
+              runDeadlineTick(wb.cfg);
+            } catch {}
+          }, 1000);
+          deadlineTimer.unref?.();
+        }
+        return wb;
+      });
   }
   return running;
 }
@@ -90,6 +103,10 @@ async function stopWorkbench(): Promise<void> {
   } catch {
     return; // startup already failed; nothing to close
   }
+  if (deadlineTimer) {
+    clearInterval(deadlineTimer);
+    deadlineTimer = undefined;
+  }
   try {
     wb.server.closeAllConnections?.();
   } catch {}
@@ -103,7 +120,7 @@ async function runTool(
 ): Promise<{ content: Array<{ type: "text"; text: string }>; details: Record<string, unknown>; isError?: boolean }> {
   const wb = await ensureWorkbench(ctx);
   const result = callTool(wb.cfg, name, params);
-  openDeliveryOnce(wb.cfg, () => {});
+  if (ctx.mode === "tui") openDeliveryOnce(wb.cfg, () => {});
   const out: { content: Array<{ type: "text"; text: string }>; details: Record<string, unknown>; isError?: boolean } = {
     content: result.content,
     details: result.structuredContent ?? {},
@@ -118,13 +135,16 @@ export default function (pi: ExtensionAPI) {
     void (async () => {
       try {
         const wb = await ensureWorkbench(ctx);
-        openDeliveryOnce(wb.cfg, () => {});
+        // Browser auto-open spawns a browser: TUI-only. In RPC/print/JSON mode
+        // the URL is surfaced via the widget/notify stream instead.
+        if (ctx.mode === "tui") openDeliveryOnce(wb.cfg, () => {});
         const url = deliveryLinks(wb.cfg)[0];
         if (url) {
           ctx.ui.setWidget("live-delivery", [`Delivery workbench ${url}`]);
           ctx.ui.notify(`Delivery workbench: ${url}`, "info");
         }
       } catch (e) {
+        ctx.ui.setWidget("live-delivery", undefined);
         ctx.ui.notify(
           `Live Delivery: workbench failed to start — ${e instanceof Error ? e.message : String(e)}`,
           "error",
@@ -133,7 +153,10 @@ export default function (pi: ExtensionAPI) {
     })();
   });
 
-  pi.on("session_shutdown", () => {
+  pi.on("session_shutdown", (_event, ctx) => {
+    try {
+      ctx.ui.setWidget("live-delivery", undefined);
+    } catch {}
     void stopWorkbench().catch(() => {});
   });
 
