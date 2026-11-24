@@ -13,7 +13,8 @@
     ],
     "skills": [
       "./skills"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/senordeveloper/pi-live-delivery/master/assets/banner.png"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
@@ -29,5 +30,6 @@
     "assets",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "repository": "https://github.com/senordeveloper/pi-live-delivery"
 }

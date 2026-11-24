@@ -24,34 +24,21 @@ Codex host machinery.
 
 Publishing is an npm release. The gallery auto-discovers npm packages with the
 `pi-package` keyword (already present in `keywords`) — no gallery submission
-form is needed. Steps:
+form is needed.
 
-1. **Repo**: `git init` is done and everything is staged. Commit + push need
-   your git identity (`git config --global user.name "<name>"` / `user.email`)
-   and GitHub auth (`gh auth login`), then:
+**State:** repo `senordeveloper/pi-live-delivery` (public, `master`) is created
+and pushed. `repository` and `pi.image` are set in `package.json`; the banner is
+committed at `assets/banner.png`.
 
-   `gh repo create <owner>/pi-live-delivery --public --source=. --push`
+Remaining steps:
 
-2. **npm**: `npm adduser` or `npm login` (or a publish token), then fill in the
-   `"repository"` field of `package.json` with the repo URL, and:
+1. Review the working tree (`git status`, `npm pack --dry-run`).
+2. `npm login` (or `npm adduser`) — no npm credentials are configured yet.
+3. `npm publish` — the gallery shows it with a preview.
 
-   `npm publish`
+After publish, pi installs it with: `pi install npm:pi-live-delivery`
 
-   A scoped name like `@your-scope/pi-live-delivery` is also fine — unscoped
-   `pi-live-delivery` is currently available (verified against the registry).
-
-3. Optional gallery polish: `pi.image` / `pi.video` under `pi` in
-   `package.json` add gallery previews. The value must be an absolute URL —
-   the gallery fetches the image from that URL (precedent: pi-fabric's
-   `https://raw.githubusercontent.com/.../media/banner.svg`); it is not read
-   from the npm tarball. `assets/banner.png` is already in the repo and in the
-   tarball; once the repo is pushed, add to `package.json`:
-
-   "pi": { ..., "image": "https://raw.githubusercontent.com/<owner>/pi-live-delivery/main/assets/banner.png" }
-
-   then republish so the metadata propagates.
-
-After publish, pi installs it with: `pi install npm:<name>`
+Optional: gallery badge polish (previews are already wired via `pi.image`).
 
 ## Install & maintenance
 
