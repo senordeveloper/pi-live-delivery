@@ -1,0 +1,33 @@
+{
+  "name": "pi-live-delivery",
+  "version": "0.1.0",
+  "description": "Live delivery: versioned directory snapshots with explicit preview entries, a rolling plan, and a local workbench \u2014 for pi.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/*.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "files": [
+    "extensions",
+    "resources/live-delivery",
+    "skills",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ]
+}
